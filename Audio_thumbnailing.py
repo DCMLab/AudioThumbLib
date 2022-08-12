@@ -7,7 +7,7 @@ import libfmp.c4
 import json
 from threading import Lock
 import argparse
-
+import warnings
 
 class AudioThumbnailer:
     """Audio thumbnailing based on the dynamic-programming algorithm of Müller et. al. (2013) and Jiang et. al. (2014).
@@ -60,15 +60,18 @@ class AudioThumbnailer:
 
         tempo_rel_set = libfmp.c4.compute_tempo_rel_set(tempo_rel_min, tempo_rel_max, tempo_num)
 
-        _, audio_duration, _, fs_feature, ssm, _ = \
-            libfmp.c4.compute_sm_from_filename(self.audio_filename,
-                                               L=downsampling_filter_length,
-                                               H=smoothing_filter_downsampling_factor,
-                                               L_smooth=essm_filter_length,
-                                               tempo_rel_set=tempo_rel_set,
-                                               penalty=penalty,
-                                               thresh=threshold,
-                                               strategy=strategy)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+
+            _, audio_duration, _, fs_feature, ssm, _ = \
+                libfmp.c4.compute_sm_from_filename(self.audio_filename,
+                                                   L=downsampling_filter_length,
+                                                   H=smoothing_filter_downsampling_factor,
+                                                   L_smooth=essm_filter_length,
+                                                   tempo_rel_set=tempo_rel_set,
+                                                   penalty=penalty,
+                                                   thresh=threshold,
+                                                   strategy=strategy)
 
         self.properties_ssm = AudioThumbnailer.normalization_properties_ssm(ssm)
         self.ssm = self.properties_ssm
@@ -142,7 +145,7 @@ class AudioThumbnailer:
                 index,
                 index + self.thumbnail_duration_sec
             ]
-            print("Trying candidate:", seg_sec)
+
             # boundaries of current thumbnail candidate in feature space
             seg = [
                 int(seg_sec[0] * self.fs_feature),
