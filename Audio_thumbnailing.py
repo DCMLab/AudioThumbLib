@@ -9,8 +9,9 @@ from threading import Lock
 import argparse
 import warnings
 
+
 class AudioThumbnailer:
-    """Audio thumbnailing based on the dynamic-programming algorithm of Müller et. al. (2013) and Jiang et. al. (2014).
+    """Audio thumbnailing based on the dynamic-programming algorithm of Müller et al. (2013) and Jiang et al. (2014).
     """
 
     def __init__(self, audio_filename, thumbnail_duration_sec=30, thumbnail_search_origin_sec=0,
@@ -34,7 +35,7 @@ class AudioThumbnailer:
             tempo_num: Number of logarithmically-spaced relative tempi between minimum and maximum (default: 5)
             tempo_rel_min: Minimum tempo ratio between thumbnail instances (default: 0.66)
             tempo_rel_max: Maximum tempo ratio between thumbnail instances (default: 1.50)
-            downsampling_filter_length: Smoothing filter length for downsampling of the feature seequence (default: 16)
+            downsampling_filter_length: Smoothing filter length for downsampling of the feature sequence (default: 16)
             smoothing_filter_downsampling_factor: Feature downsampling factor (default: 5)
             essm_filter_length: Smoothing filter length for enhanced similarity matrix computation (default: 12)
 
@@ -99,7 +100,7 @@ class AudioThumbnailer:
         parser.add_argument('--thumbnail_search_step_sec', '-s', metavar='N', type=int, nargs='?', default=5,
                             help='Thumbnail search granularity, in seconds')
         parser.add_argument('--strategy', '-r', metavar='strategy', type=str, nargs='?', default='relative',
-                            choices=['absolute','relative', 'local'],
+                            choices=['absolute', 'relative', 'local'],
                             help="Thresholding strategy for SSM computation")
         parser.add_argument('--threshold', '-t', metavar='X', type=float, nargs='?', default=0.15,
                             help='Meaning depends on selected strategy; see libfmp docs')
@@ -112,7 +113,7 @@ class AudioThumbnailer:
         parser.add_argument('--tempo_rel_max', '-M', metavar='X', type=float, nargs='?', default=1.50,
                             help='Maximum tempo ratio between thumbnail instances')
         parser.add_argument('--downsampling_filter_length', '-f', metavar='N', type=int, nargs='?', default=16,
-                            help='Smoothing filter length for downsampling of the feature seequence')
+                            help='Smoothing filter length for downsampling of the feature sequence')
         parser.add_argument('--smoothing_filter_downsampling_factor', '-i', metavar='N', type=int, nargs='?', default=5,
                             help='Feature downsampling factor')
         parser.add_argument('--essm_filter_length', '-F', metavar='N', type=int, nargs='?', default=12,
@@ -299,6 +300,7 @@ class AudioThumbnailer:
         inf = math.inf
         N = int(D.shape[0])
         M = int(D.shape[1])
+        cell = (0, 0)
 
         path_family = []
         path = []
