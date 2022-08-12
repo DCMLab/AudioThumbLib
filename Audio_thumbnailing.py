@@ -16,40 +16,42 @@ class AudioThumbnailer:
     Audio thumbnailing based on the dynamic-programming algorithm of Müller et. al. (2013) and Jiang et. al. (2014).
     """
 
-    def __init__(self, audio_filename, penalty=-2, thumbnail_duration_sec=30, thumbnail_search_origin_sec=0,
-                 thumbnail_search_step_sec=5, tempo_num=5, tempo_rel_min=0.66, tempo_rel_max=1.5, threshold=0.15,
-                 smoothing_filter_length=21, smoothing_filter_downsampling_factor=5, smoothing_length=12):
+    def __init__(self, audio_filename, thumbnail_duration_sec=30, thumbnail_search_origin_sec=0,
+                 thumbnail_search_step_sec=5, strategy='relative', threshold=0.15, penalty=-2, tempo_num=5,
+                 tempo_rel_min=0.66, tempo_rel_max=1.5, smoothing_filter_length=21,
+                 smoothing_filter_downsampling_factor=5, smoothing_length=12):
 
         """Class constructor; loads an audio file and computes a normalized self-similarity matrix based on
-        given model parameters. A "relative" threshold strategy is applied for the SSM computation
-        (see https://www.audiolabs-erlangen.de/resources/MIR/FMP/C4/C4S2_SSM-Thresholding.html).
+        given model parameters. For details on alternative thresholding strategies and parameters,
+        see the FMP documentation.
 
         Args:
-            audio_filename (string): Audio file name
-            penalty:
-            thumbnail_duration_sec:
-            thumbnail_search_origin_sec:
-            thumbnail_search_step_sec:
-            tempo_num:
-            tempo_rel_min:
-            tempo_rel_max:
-            threshold:
-            smoothing_filter_length:
-            smoothing_filter_downsampling_factor:
-            smoothing_length:
+            audio_filename (string): Name of audio file to be thumbnailed
+            thumbnail_duration_sec: Nominal thumbnail duration, in seconds (default: 30)
+            thumbnail_search_origin_sec: Starting time-point for thumbnail search, in seconds (default: 0)
+            thumbnail_search_step_sec: Thumbnail search granularity, in seconds (default 5)
+
+            strategy: Thresholding strategy for the SSM computation ('absolute', 'relative' [default], or 'local')
+            threshold: Meaning depends on selected strategy; see libfmp docs (default: 0.15)
+            penalty: Value to apply to SSM elements below threshold, in 'relative' strategy only (default: -2).
+            tempo_num: Number of logarithmically-spaced relative tempi between minimum and maximum (default: 5)
+            tempo_rel_min: Minimum tempo ratio between thumbnail instances (default: 0.66)
+            tempo_rel_max: Maximum tempo ratio between thumbnail instances (default: 1.50)
+            smoothing_filter_length: Smoothing filter length for downsampling of the feature seequence (default: 16)
+            smoothing_filter_downsampling_factor: Downsampling factor (default: 5)
+            smoothing_length: Smoothing filter length for enhanced similarity matrix computation (default: 12)
 
         Instance properties initialized:
-            self.audio_filename: [See description of respective arg]
-            self.audio: Audio data
             self.audio_duration: Duration of audio input
-            self.thumbnail_duration_sec: [See description of respective arg]
-            self.thumbnail_search_origin_sec: [See description of respective arg]
-            self.thumbnail_search_step_sec: [See description of respective arg]
             self.ssm: Normalized self-similarity matrix of input audio
             self.fs_feature: Feature rate
             self.segment_family: Array containing the boundaries of all thumbnail instances (in seconds)
             self.thumbnail: Boundaries of primary thumbnail in seconds
             self.coverage: Normalized total coverage of all thumbnail instances in the audio
+            self.audio_filename: [See description of respective arg]
+            self.thumbnail_duration_sec: [See description of respective arg]
+            self.thumbnail_search_origin_sec: [See description of respective arg]
+            self.thumbnail_search_step_sec: [See description of respective arg]
         """
 
         self.lock = Lock()
@@ -61,17 +63,17 @@ class AudioThumbnailer:
 
         tempo_rel_set = libfmp.c4.compute_tempo_rel_set(tempo_rel_min, tempo_rel_max, tempo_num)
 
-        audio, audio_duration, _, fs_feature, ssm, _ = \
+        _, audio_duration, _, fs_feature, ssm, _ = \
             libfmp.c4.compute_sm_from_filename(self.audio_filename,
                                                L=smoothing_filter_length,
                                                H=smoothing_filter_downsampling_factor,
                                                L_smooth=smoothing_length,
                                                tempo_rel_set=tempo_rel_set,
                                                penalty=penalty,
-                                               thresh=threshold)
+                                               thresh=threshold,
+                                               strategy=strategy)
 
         self.ssm = AudioThumbnailer.normalization_properties_ssm(ssm)
-        self.audio = audio
         self.audio_duration = audio_duration
         self.fs_feature = fs_feature
         self.segment_family = None
