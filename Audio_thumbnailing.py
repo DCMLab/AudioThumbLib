@@ -132,14 +132,14 @@ class AudioThumbnailer:
                 self.thumbnail = {
                     "filename": self.audio_filename,
                     "thumbnail": {
-                        "nominal_duration_seconds": self.thumbnail_duration_sec,
-                        "search_step_seconds": self.thumbnail_search_step_sec,
-                        "instances_total_duration_seconds": json.dumps((segment_family / self.fs_feature).tolist()),
+                        "boundaries_in_seconds": json.dumps((segment_family / self.fs_feature).tolist()),
+                        "fitness": '%0.3f' % fitness,
+                        "nominal_duration_in_seconds": self.thumbnail_duration_sec,
+                        "search_step_in_seconds": self.thumbnail_search_step_sec,
+                        "total_coverage_in_seconds": coverage / self.fs_feature,
+                        "normalized_total_coverage": '%0.3f' % coverage_n,
                         "score": '%0.3f' % score,
-                        "coverage_seconds": coverage / self.fs_feature,
-                        "normalized_score": '%0.3f' % score_n,
-                        "normalized_coverage": '%0.3f' % coverage_n,
-                        "fitness": '%0.3f' % fitness
+                        "normalized_score": '%0.3f' % score_n
                     },
                     "context": {
                         "audio_duration_seconds": '{:.2f}'.format(self.audio_duration),
