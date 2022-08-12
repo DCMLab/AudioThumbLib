@@ -267,19 +267,19 @@ class AudioThumbnailer:
         N = S_seg.shape[0]
         M = S_seg.shape[1] + 1
 
-        # Initializing score matrix
+        # initializing score matrix
         D = -inf * np.ones((N, M), dtype=np.float64)
         D[0, 0] = 0.
         D[0, 1] = D[0, 0] + S_seg[0, 0]
 
-        # Dynamic programming
+        # dynamic programming
         for n in range(1, N):
             D[n, 0] = max(D[n - 1, 0], D[n - 1, -1])
             D[n, 1] = D[n, 0] + S_seg[n, 0]
             for m in range(2, M):
                 D[n, m] = S_seg[n, m - 1] + max(D[n - 1, m - 1], D[n - 1, m - 2], D[n - 2, m - 1])
 
-        # Score of optimal path family
+        # score of optimal path family
         score = np.maximum(D[N - 1, 0], D[N - 1, M - 1])
 
         return D, score
@@ -296,7 +296,7 @@ class AudioThumbnailer:
             path_family (list): Optimal path family consisting of list of paths
                 (each path being a list of index pairs)
         """
-        # Initialization
+        # initialization
         inf = math.inf
         N = int(D.shape[0])
         M = int(D.shape[1])
@@ -313,7 +313,7 @@ class AudioThumbnailer:
             path_point = (N - 1, M - 2)
             path.append(path_point)
 
-        # Backtracking
+        # backtracking
         while n > 0 or m > 0:
 
             # obtaining the set of possible predecessors given our current position
@@ -387,17 +387,17 @@ class AudioThumbnailer:
         num_path = len(path_family)
         M = path_family[0][-1][1] + 1
 
-        # Normalized score
+        # normalized score
         path_family_length = 0
         for n in range(num_path):
             path_family_length = path_family_length + len(path_family[n])
         score_n = (score - M) / (path_family_length + eps)
 
-        # Normalized coverage
+        # normalized coverage
         segment_family, coverage = AudioThumbnailer.compute_induced_segment_family_coverage(path_family)
         coverage_n = (coverage - M) / (N + eps)
 
-        # Fitness measure
+        # fitness measure
         fitness = 2 * score_n * coverage_n / (score_n + coverage_n + eps)
 
         return fitness, score, score_n, coverage, coverage_n, path_family_length
