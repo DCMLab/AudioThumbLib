@@ -214,6 +214,7 @@ class AudioThumbnailer:
         """
         ssm_normalized = ssm.copy()
         size = ssm_normalized.shape[0]
+        max_s = math.inf
         for n in range(size):
             ssm_normalized[n, n] = 1
             max_s = np.max(ssm_normalized)
