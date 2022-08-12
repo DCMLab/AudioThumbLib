@@ -6,20 +6,17 @@ from numba import jit
 import libfmp.c4
 import json
 from threading import Lock
-
-
-# import argparse
+import argparse
 
 
 class AudioThumbnailer:
-    """
-    Audio thumbnailing based on the dynamic-programming algorithm of Müller et. al. (2013) and Jiang et. al. (2014).
+    """Audio thumbnailing based on the dynamic-programming algorithm of Müller et. al. (2013) and Jiang et. al. (2014).
     """
 
     def __init__(self, audio_filename, thumbnail_duration_sec=30, thumbnail_search_origin_sec=0,
                  thumbnail_search_step_sec=5, strategy='relative', threshold=0.15, penalty=-2, tempo_num=5,
-                 tempo_rel_min=0.66, tempo_rel_max=1.5, smoothing_filter_length=21,
-                 smoothing_filter_downsampling_factor=5, smoothing_length=12):
+                 tempo_rel_min=0.66, tempo_rel_max=1.5, downsampling_filter_length=21,
+                 smoothing_filter_downsampling_factor=5, essm_filter_length=12):
 
         """Class constructor; loads an audio file and computes a normalized self-similarity matrix based on
         given model parameters. For details on alternative thresholding strategies and parameters,
@@ -37,9 +34,9 @@ class AudioThumbnailer:
             tempo_num: Number of logarithmically-spaced relative tempi between minimum and maximum (default: 5)
             tempo_rel_min: Minimum tempo ratio between thumbnail instances (default: 0.66)
             tempo_rel_max: Maximum tempo ratio between thumbnail instances (default: 1.50)
-            smoothing_filter_length: Smoothing filter length for downsampling of the feature seequence (default: 16)
-            smoothing_filter_downsampling_factor: Downsampling factor (default: 5)
-            smoothing_length: Smoothing filter length for enhanced similarity matrix computation (default: 12)
+            downsampling_filter_length: Smoothing filter length for downsampling of the feature seequence (default: 16)
+            smoothing_filter_downsampling_factor: Feature downsampling factor (default: 5)
+            essm_filter_length: Smoothing filter length for enhanced similarity matrix computation (default: 12)
 
         Instance properties initialized:
             self.audio_duration: Duration of audio input
@@ -65,24 +62,66 @@ class AudioThumbnailer:
 
         _, audio_duration, _, fs_feature, ssm, _ = \
             libfmp.c4.compute_sm_from_filename(self.audio_filename,
-                                               L=smoothing_filter_length,
+                                               L=downsampling_filter_length,
                                                H=smoothing_filter_downsampling_factor,
-                                               L_smooth=smoothing_length,
+                                               L_smooth=essm_filter_length,
                                                tempo_rel_set=tempo_rel_set,
                                                penalty=penalty,
                                                thresh=threshold,
                                                strategy=strategy)
 
-        self.ssm = AudioThumbnailer.normalization_properties_ssm(ssm)
+        self.properties_ssm = AudioThumbnailer.normalization_properties_ssm(ssm)
+        self.ssm = self.properties_ssm
         self.audio_duration = audio_duration
         self.fs_feature = fs_feature
         self.segment_family = None
         self.thumbnail = None
         self.coverage = None
 
-    def run(self):
+    @staticmethod
+    def cli():
+        """Adds a command-line interface and parses arguments, displaying help otherwise.
+
+        Returns:
+            parser: An ```argparser``` object with command line arguments
         """
-        Locates primary thumbnail and any additional instances thereof, wrapping them within a JSON object.
+
+        parser = argparse.ArgumentParser(description='Audio file thumbmailing.')
+        parser.add_argument('audio_filename', metavar='file', type=str,
+                            help='Name of audio file to be thumbnailed')
+        parser.add_argument('--thumbnail_duration_sec', '-d', metavar='N', type=int, nargs='?', default=30,
+                            help='Name of audio file to be thumbnailed')
+        parser.add_argument('--thumbnail_search_origin_sec', '-o', metavar='N', type=int, nargs='?', default=0,
+                            help='Starting time-point for thumbnail search, in seconds')
+        parser.add_argument('--thumbnail_search_step_sec', '-s', metavar='N', type=int, nargs='?', default=5,
+                            help='Thumbnail search granularity, in seconds')
+        parser.add_argument('--strategy', '-r', metavar='strategy', type=str, nargs='?', default='relative',
+                            choices=['absolute','relative', 'local'],
+                            help="Thresholding strategy for SSM computation")
+        parser.add_argument('--threshold', '-t', metavar='X', type=float, nargs='?', default=0.15,
+                            help='Meaning depends on selected strategy; see libfmp docs')
+        parser.add_argument('--penalty', '-p', metavar='N', type=int, nargs='?', default=-2,
+                            help="Value to apply to SSM elements below threshold, in 'relative' strategy only")
+        parser.add_argument('--tempo_num', '-n', metavar='N', type=int, nargs='?', default=5,
+                            help='Number of logarithmically-spaced relative tempi between minimum and maximum')
+        parser.add_argument('--tempo_rel_min', '-m', metavar='X', type=float, nargs='?', default=0.66,
+                            help='Minimum tempo ratio between thumbnail instances')
+        parser.add_argument('--tempo_rel_max', '-M', metavar='X', type=float, nargs='?', default=1.50,
+                            help='Maximum tempo ratio between thumbnail instances')
+        parser.add_argument('--downsampling_filter_length', '-f', metavar='N', type=int, nargs='?', default=16,
+                            help='Smoothing filter length for downsampling of the feature seequence')
+        parser.add_argument('--smoothing_filter_downsampling_factor', '-i', metavar='N', type=int, nargs='?', default=5,
+                            help='Feature downsampling factor')
+        parser.add_argument('--essm_filter_length', '-F', metavar='N', type=int, nargs='?', default=12,
+                            help='Smoothing filter length for enhanced similarity matrix computation')
+        parser.parse_args()
+
+        args = vars(parser.parse_args())
+
+        return args
+
+    def run(self):
+        """Locates primary thumbnail and any additional instances thereof, wrapping them within a JSON object.
 
         Args:
 
@@ -356,15 +395,8 @@ class AudioThumbnailer:
 
         return fitness, score, score_n, coverage, coverage_n, path_family_length
 
-    # parser = argparse.ArgumentParser(description='Audio file thumbnailing.')
-    # parser.add_argument('files', metavar='file', type=str, nargs='+',
-    # help='A file to identify an optimal thumbnail in.')
-    # args, unknown = parser.parse_known_args(['-h', 'file1', 'file2', 'file3'])
 
-
-t = AudioThumbnailer('Monk2_master.mp3', penalty=-2, thumbnail_duration_sec=30, thumbnail_search_origin_sec=0)
-t.run()
-
-# %%
-
-# %%
+if __name__ == "__main__":
+    args = AudioThumbnailer.cli()
+    t = AudioThumbnailer(**args)
+    t.run()

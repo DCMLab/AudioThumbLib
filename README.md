@@ -5,7 +5,7 @@ A simple Python library for audio thumbnailing using the dynamic-programming alg
 TODO:
 
 - [X] Refactor as Python class.
-- [ ] Implement `argparse` functionality.
+- [X] Implement CLI using `argparse`.
 - [ ] Deliver as package.
 - [ ] Implement automated test.
 
