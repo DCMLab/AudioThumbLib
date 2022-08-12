@@ -119,6 +119,7 @@ class AudioThumbnailer:
                             help='Smoothing filter length for enhanced similarity matrix computation')
         parser.parse_args()
 
+        # convert the NameSpace object returned by the ArgumentParser to an unpackable Python dictionary
         args = vars(parser.parse_args())
 
         return args
