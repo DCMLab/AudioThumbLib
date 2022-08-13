@@ -101,7 +101,7 @@ class AudioThumbnailer:
                             help='Thumbnail search granularity, in seconds (default: 5)')
         parser.add_argument('--strategy', '-r', metavar='strategy', type=str, nargs='?', default='relative',
                             choices=['absolute', 'relative', 'local'],
-                            help="Thresholding strategy for SSM computation (default: 'relative')")
+                            help="Thresholding strategy in SSM computation ('absolute', 'relative' [default], 'local')")
         parser.add_argument('--threshold', '-t', metavar='X', type=float, nargs='?', default=0.15,
                             help='Meaning depends on selected strategy; see libfmp docs (default: 0.15)')
         parser.add_argument('--penalty', '-p', metavar='N', type=int, nargs='?', default=-2,

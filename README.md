@@ -7,6 +7,6 @@ TODO:
 - [X] Refactor as Python class.
 - [X] Implement CLI using `argparse`.
 - [ ] Deliver as package.
-- [ ] Implement automated test.
+- [X] Implement automated test.
 
 
