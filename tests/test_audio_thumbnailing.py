@@ -1,7 +1,7 @@
 import sys
 import json
 
-sys.path.insert(0, './src')
+sys.path.insert(0, '../src')
 from Audio_thumbnailing import AudioThumbnailer
 
 
