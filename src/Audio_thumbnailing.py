@@ -7,12 +7,16 @@ import libfmp.c4
 import json
 from threading import Lock
 import argparse
+from yaspin import yaspin
+from yaspin.spinners import Spinners
 import warnings
 
 
 class AudioThumbnailer:
     """Audio thumbnailing based on the dynamic-programming algorithm of Müller et al. (2013) and Jiang et al. (2014).
     """
+
+    version = 0.1
 
     def __init__(self, audio_filename, thumbnail_duration_sec=30, thumbnail_search_origin_sec=0,
                  thumbnail_search_step_sec=5, strategy='relative', threshold=0.15, penalty=-2, tempo_num=5,
@@ -50,9 +54,18 @@ class AudioThumbnailer:
             self.thumbnail_duration_sec: [See description of respective arg]
             self.thumbnail_search_origin_sec: [See description of respective arg]
             self.thumbnail_search_step_sec: [See description of respective arg]
+
         """
 
-        self.lock = Lock()
+        self._spinner = yaspin(timer=True)
+        if __name__ == "__main__":
+            print(f'AudioThumbLib CLI version {AudioThumbnailer.version}')
+            self._spinner.spinner = Spinners.aesthetic
+            self._spinner.color = 'cyan'
+            self._spinner.start()
+            self._spinner.text = "Thumbnailing in progress..."
+
+        self._lock = Lock()
 
         self.audio_filename = audio_filename
         self.thumbnail_duration_sec = thumbnail_duration_sec
@@ -134,10 +147,11 @@ class AudioThumbnailer:
             self.thumbnail: Boundaries of primary thumbnail in seconds
         """
 
-        self.lock.acquire()
+        self._lock.acquire()
 
         max_fitness = 0
         index = 0
+
         while index in np.arange(self.thumbnail_search_origin_sec,
                                  self.audio_duration - self.thumbnail_duration_sec,
                                  self.thumbnail_search_step_sec):
@@ -199,9 +213,11 @@ class AudioThumbnailer:
 
             index += self.thumbnail_search_step_sec
 
-        self.lock.release()
+        self._lock.release()
 
         if __name__ == "__main__":
+            self._spinner.text = 'Thumbnailing complete'
+            self._spinner.ok()
             print(json.dumps(self.thumbnail, indent=2))
 
     @staticmethod
