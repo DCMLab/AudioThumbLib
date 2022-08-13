@@ -61,6 +61,7 @@ class AudioThumbnailer:
 
         """
 
+        # spinner initialization
         self._spinner = yaspin(timer=True)
         if __name__ == "__main__":
             print(f'AudioThumbLib CLI version {AudioThumbnailer.version}')
@@ -70,19 +71,15 @@ class AudioThumbnailer:
             self._spinner.text = "Thumbnailing in progress..."
             self._spinner.write('> Initializing')
 
+        # lock object for safety in multithreaded contexts
         self._lock = Lock()
 
+        # initialize object properties
         self.audio_filename = audio_filename
 
         self.thumbnail_duration_min = thumbnail_duration_min
         self.thumbnail_duration_max = thumbnail_duration_max
         self.thumbnail_duration_step = thumbnail_duration_step
-        if self.thumbnail_duration_min > self.thumbnail_duration_max:
-            if __name__ == "__main__":
-                self._spinner.write('Swapping duration_sec_min and thumbnail_duration_max to enforce coherent order.')
-                t = self.thumbnail_duration_max
-                self.thumbnail_duration_max = self.thumbnail_duration_min
-                self.thumbnail_duration_min = t
         self.thumbnail_search_origin = thumbnail_search_origin
         self.thumbnail_search_step = thumbnail_search_step
 
@@ -102,6 +99,60 @@ class AudioThumbnailer:
                                                    penalty=penalty,
                                                    thresh=threshold,
                                                    strategy=strategy)
+
+            # preliminary checks
+            self._exception = False
+            try:
+                assert(
+                        thumbnail_duration_min > 0 and
+                        thumbnail_duration_max > 0 and
+                        thumbnail_duration_step > 0 and
+                        thumbnail_search_origin >= 0 and
+                        thumbnail_search_step > 0 and
+                        tempo_num > 0 and
+                        downsampling_filter_length > 0 and
+                        smoothing_filter_downsampling_factor > 0 and
+                        essm_filter_length > 0
+                ), 'Exception: negative parameters not allowed.'
+            except AssertionError:
+                self._exception = True
+                if __name__ == "__main__":
+                    self._spinner.write('> Error! Negative parameters not allowed')
+            try:
+                assert(
+                        thumbnail_search_origin >= 0 and
+                        tempo_rel_min < tempo_rel_max
+                ), 'Exception: the search origin cannot be negative.'
+            except AssertionError:
+                self._exception = True
+                if __name__ == "__main__":
+                    self._spinner.write('> Error! The search origin cannot be negative')
+
+            try:
+                assert(
+                        tempo_rel_min < tempo_rel_max
+                ), 'Exception: incorrect relative tempo parameters.'
+            except AssertionError:
+                self._exception = True
+                if __name__ == "__main__":
+                    self._spinner.write('> Error! Incorrect relative tempo parameters')
+
+            try:
+                assert(
+                        thumbnail_duration_min <= audio_duration
+                ), 'Exception: requested minimum thumbnail duration is longer than audio duration.'
+            except AssertionError:
+                self._exception = True
+                if __name__ == "__main__":
+                    self._spinner.write('> Error! Please request a thumbnail no longer than the audio itself')
+            try:
+                assert(
+                        thumbnail_duration_min <= thumbnail_duration_max
+                ), 'Exception: invalid thumbnail duration parameters.'
+            except AssertionError:
+                self._exception = True
+                if __name__ == "__main__":
+                    self._spinner.write('> Error! Invalid thumbnail duration parameters')
 
         self.properties_ssm = AudioThumbnailer.normalization_properties_ssm(ssm)
         self.ssm = self.properties_ssm
@@ -164,97 +215,104 @@ class AudioThumbnailer:
         Args:
 
         Instance properties set:
-            self.thumbnail: Boundaries of primary thumbnail in seconds
+            self.thumbnail: Boundaries of primary thumbnail in seconds (or returns False in case of error).
         """
 
-        self._lock.acquire()
+        if not self._exception:
+            self._lock.acquire()
 
-        max_fitness = -1
-        d_index = self.thumbnail_duration_min
+            max_fitness = -1
+            d_index = self.thumbnail_duration_min
 
-        if __name__ == "__main__":
-            self._spinner.write('> Searching for optimal thumbnail')
+            if __name__ == "__main__":
+                self._spinner.write('> Searching for optimal thumbnail')
 
-        while d_index in range(self.thumbnail_duration_min,
-                               self.thumbnail_duration_max,
-                               self.thumbnail_duration_step):
+            while d_index in range(self.thumbnail_duration_min,
+                                   self.thumbnail_duration_max,
+                                   self.thumbnail_duration_step):
 
-            t_index = self.thumbnail_search_origin
+                t_index = self.thumbnail_search_origin
 
-            while t_index in np.arange(self.thumbnail_search_origin,
-                                       self.audio_duration - d_index,
-                                       self.thumbnail_search_step):
+                while t_index in np.arange(self.thumbnail_search_origin,
+                                           self.audio_duration - d_index,
+                                           self.thumbnail_search_step):
 
-                # boundaries of current thumbnail candidate in seconds
-                seg_sec = [
-                    t_index,
-                    t_index + d_index
-                ]
+                    # boundaries of current thumbnail candidate in seconds
+                    seg_sec = [
+                        t_index,
+                        t_index + d_index
+                    ]
 
-                # boundaries of current thumbnail candidate in feature space
-                seg = [
-                    int(seg_sec[0] * self.fs_feature),
-                    int(seg_sec[1] * self.fs_feature)
-                ]
+                    # boundaries of current thumbnail candidate in feature space
+                    seg = [
+                        int(seg_sec[0] * self.fs_feature),
+                        int(seg_sec[1] * self.fs_feature)
+                    ]
 
-                # self-similarity sub-matrix for current thumbnail candidate
-                s_seg = self.ssm[:, seg[0]:seg[1] + 1]
+                    # self-similarity sub-matrix for current thumbnail candidate
+                    s_seg = self.ssm[:, seg[0]:seg[1] + 1]
 
-                # accumulated score matrix and score of current thumbnail candidate
-                d, score = AudioThumbnailer.compute_accumulated_score_matrix(s_seg)
+                    # accumulated score matrix and score of current thumbnail candidate
+                    d, score = AudioThumbnailer.compute_accumulated_score_matrix(s_seg)
 
-                # optimal path family (i.e. thumbnail instance family) for current candidate
-                path_family = AudioThumbnailer.compute_optimal_path_family(d)
+                    # optimal path family (i.e. thumbnail instance family) for current candidate
+                    path_family = AudioThumbnailer.compute_optimal_path_family(d)
 
-                # boundaries of optimal path family members
-                n = self.ssm.shape[0]
-                segment_family, coverage = AudioThumbnailer.compute_induced_segment_family_coverage(path_family)
+                    # boundaries of optimal path family members
+                    n = self.ssm.shape[0]
+                    segment_family, coverage = AudioThumbnailer.compute_induced_segment_family_coverage(path_family)
 
-                # quality metrics of current thumbnail candidate
-                fitness, score, score_n, coverage, coverage_n, path_family_length = \
-                    AudioThumbnailer.compute_fitness(path_family, score, n)
+                    # quality metrics of current thumbnail candidate
+                    fitness, score, score_n, coverage, coverage_n, path_family_length = \
+                        AudioThumbnailer.compute_fitness(path_family, score, n)
 
-                if AudioThumbnailer.debug:
-                    print(f'Evaluated {d_index}-sec thumbnail {seg_sec[0]}sec–{seg_sec[1]}sec ({fitness}).')
+                    if AudioThumbnailer.debug:
+                        print(f'Evaluated {d_index}-sec thumbnail {seg_sec[0]}sec–{seg_sec[1]}sec ({fitness}).')
 
-                if fitness > max_fitness:
-                    max_fitness = fitness
+                    if fitness > max_fitness:
+                        max_fitness = fitness
 
-                    self.thumbnail = {
-                        "filename": self.audio_filename,
-                        "thumbnail": {
-                            "boundaries_in_seconds": json.dumps((segment_family / self.fs_feature).tolist()),
-                            "fitness": '%0.3f' % fitness,
-                            "nominal_duration_in_seconds": d_index,
-                            "search_step_in_seconds": self.thumbnail_search_step,
-                            "thumbnail_duration_step_in_seconds": self.thumbnail_duration_step,
-                            "coverage_in_seconds": coverage / self.fs_feature,
-                            "normalized_coverage": '%0.3f' % coverage_n,
-                            "score": '%0.3f' % score,
-                            "normalized_score": '%0.3f' % score_n
-                        },
-                        "context": {
-                            "audio_duration_in_seconds": '{:.2f}'.format(self.audio_duration),
-                            "feature_rate": self.fs_feature,
-                            "ssm_dimensions": {
-                                "x": self.ssm.shape[0],
-                                "y": self.ssm.shape[1]
+                        self.thumbnail = {
+                            "filename": self.audio_filename,
+                            "thumbnail": {
+                                "boundaries_in_seconds": json.dumps((segment_family / self.fs_feature).tolist()),
+                                "fitness": '%0.3f' % fitness,
+                                "nominal_duration_in_seconds": d_index,
+                                "search_step_in_seconds": self.thumbnail_search_step,
+                                "thumbnail_duration_step_in_seconds": self.thumbnail_duration_step,
+                                "coverage_in_seconds": coverage / self.fs_feature,
+                                "normalized_coverage": '%0.3f' % coverage_n,
+                                "score": '%0.3f' % score,
+                                "normalized_score": '%0.3f' % score_n
+                            },
+                            "context": {
+                                "audio_duration_in_seconds": '{:.2f}'.format(self.audio_duration),
+                                "feature_rate": self.fs_feature,
+                                "ssm_dimensions": {
+                                    "x": self.ssm.shape[0],
+                                    "y": self.ssm.shape[1]
+                                }
                             }
                         }
-                    }
 
-                t_index += self.thumbnail_search_step
+                    t_index += self.thumbnail_search_step
 
-            d_index += self.thumbnail_duration_step
+                d_index += self.thumbnail_duration_step
 
-        self._lock.release()
+            self._lock.release()
 
-        if __name__ == "__main__":
-            self._spinner.write(f'> Optimal thumbnail determined')
-            self._spinner.text = 'Thumbnailing complete'
-            self._spinner.color
-            self._spinner.ok()
-            print(json.dumps(self.thumbnail, indent=2))
+            if __name__ == "__main__":
+                self._spinner.write(f'> Optimal thumbnail determined')
+                self._spinner.text = 'Thumbnailing complete'
+                self._spinner.ok()
+                print(json.dumps(self.thumbnail, indent=2))
+
+        else:
+            if __name__ == "__main__":
+                self._spinner.write(f'> Quitting...')
+                self._spinner.text = ''
+            self._spinner.fail()
+            return False
 
     @staticmethod
     def normalization_properties_ssm(ssm):
