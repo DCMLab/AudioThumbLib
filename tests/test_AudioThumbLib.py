@@ -2,17 +2,17 @@ import sys
 import json
 
 sys.path.insert(0, '../src')
-from Audio_thumbnailing import AudioThumbnailer
+from AudioThumbLib import AudioThumbnailer
 
 
 def test_one():
-    t = AudioThumbnailer('Monk2_master.mp3')
+    t = AudioThumbnailer('Monk.mp3')
     t.run()
 
     print(json.dumps(t.thumbnail, indent=2))
 
     assert t.thumbnail == {
-        "filename": "Monk2_master.mp3",
+        "filename": "Monk.mp3",
         "thumbnail": {
             "boundaries_in_seconds": "[[20.0, 50.0], [145.5, 172.5]]",
             "fitness": "0.135",
