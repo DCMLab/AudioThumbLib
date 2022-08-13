@@ -35,7 +35,7 @@ class AudioThumbnailer:
             tempo_num: Number of logarithmically-spaced relative tempi between minimum and maximum (default: 5)
             tempo_rel_min: Minimum tempo ratio between thumbnail instances (default: 0.66)
             tempo_rel_max: Maximum tempo ratio between thumbnail instances (default: 1.50)
-            downsampling_filter_length: Smoothing filter length for downsampling of the feature sequence (default: 16)
+            downsampling_filter_length: Smoothing filter length for downsampling of the feature sequence (default: 21)
             smoothing_filter_downsampling_factor: Feature downsampling factor (default: 5)
             essm_filter_length: Smoothing filter length for enhanced similarity matrix computation (default: 12)
 
@@ -112,7 +112,7 @@ class AudioThumbnailer:
                             help='Minimum tempo ratio between thumbnail instances')
         parser.add_argument('--tempo_rel_max', '-M', metavar='X', type=float, nargs='?', default=1.50,
                             help='Maximum tempo ratio between thumbnail instances')
-        parser.add_argument('--downsampling_filter_length', '-f', metavar='N', type=int, nargs='?', default=16,
+        parser.add_argument('--downsampling_filter_length', '-f', metavar='N', type=int, nargs='?', default=21,
                             help='Smoothing filter length for downsampling of the feature sequence')
         parser.add_argument('--smoothing_filter_downsampling_factor', '-i', metavar='N', type=int, nargs='?', default=5,
                             help='Feature downsampling factor')
