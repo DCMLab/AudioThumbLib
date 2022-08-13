@@ -201,7 +201,8 @@ class AudioThumbnailer:
 
         self.lock.release()
 
-        print(json.dumps(self.thumbnail, indent=2))
+        if __name__ == "__main__":
+            print(json.dumps(self.thumbnail, indent=2))
 
     @staticmethod
     def normalization_properties_ssm(ssm):
