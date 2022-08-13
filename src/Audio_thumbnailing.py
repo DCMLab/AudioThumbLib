@@ -94,30 +94,30 @@ class AudioThumbnailer:
         parser.add_argument('audio_filename', metavar='file', type=str,
                             help='Name of audio file to be thumbnailed')
         parser.add_argument('--thumbnail_duration_sec', '-d', metavar='N', type=int, nargs='?', default=30,
-                            help='Name of audio file to be thumbnailed')
+                            help='Name of audio file to be thumbnailed (default: 30)')
         parser.add_argument('--thumbnail_search_origin_sec', '-o', metavar='N', type=int, nargs='?', default=0,
-                            help='Starting time-point for thumbnail search, in seconds')
+                            help='Starting time-point for thumbnail search, in seconds (default: 0)')
         parser.add_argument('--thumbnail_search_step_sec', '-s', metavar='N', type=int, nargs='?', default=5,
-                            help='Thumbnail search granularity, in seconds')
+                            help='Thumbnail search granularity, in seconds (default: 5)')
         parser.add_argument('--strategy', '-r', metavar='strategy', type=str, nargs='?', default='relative',
                             choices=['absolute', 'relative', 'local'],
-                            help="Thresholding strategy for SSM computation")
+                            help="Thresholding strategy for SSM computation (default: 'relative')")
         parser.add_argument('--threshold', '-t', metavar='X', type=float, nargs='?', default=0.15,
-                            help='Meaning depends on selected strategy; see libfmp docs')
+                            help='Meaning depends on selected strategy; see libfmp docs (default: 0.15)')
         parser.add_argument('--penalty', '-p', metavar='N', type=int, nargs='?', default=-2,
-                            help="Value to apply to SSM elements below threshold, in 'relative' strategy only")
+                            help="Value enforced on SSM elements below threshold in 'relative' strategy (default: -2)")
         parser.add_argument('--tempo_num', '-n', metavar='N', type=int, nargs='?', default=5,
-                            help='Number of logarithmically-spaced relative tempi between minimum and maximum')
+                            help='Number of logarithmically-spaced relative tempi between min and max (default: 5)')
         parser.add_argument('--tempo_rel_min', '-m', metavar='X', type=float, nargs='?', default=0.66,
-                            help='Minimum tempo ratio between thumbnail instances')
+                            help='Minimum tempo ratio between thumbnail instances (default: 0.66)')
         parser.add_argument('--tempo_rel_max', '-M', metavar='X', type=float, nargs='?', default=1.50,
-                            help='Maximum tempo ratio between thumbnail instances')
+                            help='Maximum tempo ratio between thumbnail instances (default: 1.50)')
         parser.add_argument('--downsampling_filter_length', '-f', metavar='N', type=int, nargs='?', default=21,
-                            help='Smoothing filter length for downsampling of the feature sequence')
+                            help='Smoothing filter length for downsampling of the feature sequence (default: 21)')
         parser.add_argument('--smoothing_filter_downsampling_factor', '-i', metavar='N', type=int, nargs='?', default=5,
-                            help='Feature downsampling factor')
+                            help='Feature downsampling factor (default: 5)')
         parser.add_argument('--essm_filter_length', '-F', metavar='N', type=int, nargs='?', default=12,
-                            help='Smoothing filter length for enhanced similarity matrix computation')
+                            help='Smoothing filter length for enhanced similarity matrix computation (default: 12)')
         parser.parse_args()
 
         # convert the NameSpace object returned by the ArgumentParser to an unpackable Python dictionary
