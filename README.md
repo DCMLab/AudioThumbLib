@@ -1,6 +1,6 @@
 # AudioThumbLib
 
-AudioThumbLib is a Python library and command-line tool for audio thumbnailing, building on the dynamic-programming algorithm of Müller *et al.* (2013) and Jiang *et al.* (2014). It attempts to determine the positions and durations of the most characteristic material in the recorded stream—for example a theme and its repetitions.
+AudioThumbLib is a Python library and command-line tool for audio thumbnailing. Building on the dynamic-programming algorithm of Müller *et al.* (2013) and Jiang *et al.* (2014), it attempts to determine the positions and durations of the most characteristic material in a given musical stream—for example, a main theme and its repetitions.
 
 ## Documentation
 
@@ -13,6 +13,8 @@ $ git clone git@github.com:DCMLab/AudioThumbLib.git
 $ cd AudioThumbLib
 $ python -m pip install -r requirements.txt
 ```
+
+AudioThumbLib has been developed and tested on Python 3.10.5 but may work with earlier versions, as well.
 
 ## Use
 
