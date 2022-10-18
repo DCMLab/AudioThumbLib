@@ -46,3 +46,7 @@ print(json.dumps(t.thumbnail, indent=2))
 $ cd ./tests
 $ pytest test_AudioThumbLib.py -vv
 ```
+
+## Contact
+
+Yannis Rammos (`yannis.rammos@epfl.ch`)
